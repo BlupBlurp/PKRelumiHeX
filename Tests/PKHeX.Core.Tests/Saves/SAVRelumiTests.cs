@@ -144,6 +144,86 @@ public class SAVRelumiTests
     }
 
     [Fact]
+    public void TrainerInfoReadsSaveValues()
+    {
+        // Sample save: name Bello, id 3682250500, gold 39492, male, 1 badge, English, 6:48:13.
+        Assert.True(File.Exists(SavePath));
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(File.ReadAllBytes(SavePath), out var sav));
+        var relumi = (SAVRelumi)sav;
+
+        Assert.Equal("Bello", relumi.OT);
+        Assert.Equal(44804, relumi.TID16); // 3682250500 & 0xFFFF
+        Assert.Equal(56186, relumi.SID16); // 3682250500 >> 16
+        Assert.Equal(39492u, relumi.Money);
+        Assert.Equal(0, relumi.Gender);
+        Assert.Equal(1, relumi.Badges);
+        Assert.Equal(2, relumi.Language); // English
+        Assert.Equal(6, relumi.PlayedHours);
+        Assert.Equal(48, relumi.PlayedMinutes);
+        Assert.Equal(13, relumi.PlayedSeconds);
+    }
+
+    [Fact]
+    public void TrainerInfoEditRoundTrips()
+    {
+        Assert.True(File.Exists(SavePath));
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(File.ReadAllBytes(SavePath), out var sav));
+        var relumi = (SAVRelumi)sav;
+
+        relumi.OT = "Testy";
+        relumi.TID16 = 12345;
+        relumi.SID16 = 54321;
+        relumi.Money = 123456;
+        relumi.Gender = 1;
+        relumi.Badges = 0xFF;
+        relumi.Language = 1; // Japanese
+        relumi.PlayedHours = 10;
+        relumi.PlayedMinutes = 20;
+        relumi.PlayedSeconds = 30;
+
+        var resultBytes = relumi.Write().ToArray();
+        Assert.True(reader.TryRead(resultBytes, out var sav2));
+        var back = (SAVRelumi)sav2;
+        Assert.Equal("Testy", back.OT);
+        Assert.Equal(12345, back.TID16);
+        Assert.Equal(54321, back.SID16);
+        Assert.Equal(123456u, back.Money);
+        Assert.Equal(1, back.Gender);
+        Assert.Equal(0xFF, back.Badges);
+        Assert.Equal(1, back.Language);
+        Assert.Equal(10, back.PlayedHours);
+        Assert.Equal(20, back.PlayedMinutes);
+        Assert.Equal(30, back.PlayedSeconds);
+    }
+
+    [Fact]
+    public void TrainerInfoCloneCopyTransfersEdits()
+    {
+        // The Trainer Info dialog edits a clone, then copies back; the base
+        // byte-copy would drop JSON-tree edits, so Relumi overrides it.
+        Assert.True(File.Exists(SavePath));
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(File.ReadAllBytes(SavePath), out var sav));
+        var relumi = (SAVRelumi)sav;
+
+        var clone = (SAVRelumi)relumi.Clone();
+        clone.OT = "ViaClone";
+        clone.Language = 1;
+        clone.Badges = 0xFF;
+        relumi.CopyChangesFrom(clone);
+
+        Assert.Equal("ViaClone", relumi.OT);
+        var resultBytes = relumi.Write().ToArray();
+        Assert.True(reader.TryRead(resultBytes, out var sav2));
+        var back = (SAVRelumi)sav2;
+        Assert.Equal("ViaClone", back.OT);
+        Assert.Equal(1, back.Language);
+        Assert.Equal(0xFF, back.Badges);
+    }
+
+    [Fact]
     public void EditAndReSave()
     {
         Assert.True(File.Exists(SavePath));

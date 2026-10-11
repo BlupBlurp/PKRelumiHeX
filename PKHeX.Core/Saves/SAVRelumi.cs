@@ -48,11 +48,37 @@ public sealed class SAVRelumi : SaveFile
         int pkmBufferLength = (6 * SIZE_PARTY) + (BoxCount * BoxSlotCount * SIZE_PARTY);
         _pkmBuffer = new byte[pkmBufferLength];
 
+        ReloadMonBuffer();
+    }
+
+    /// <summary> Rebuilds the synthetic mon buffer from the current JSON tree. </summary>
+    private void ReloadMonBuffer()
+    {
+        Array.Clear(_pkmBuffer);
+        PartyCount = 0;
+
         // Load party Pokémon encrypted blobs into the buffer
         LoadPartyFromJson();
 
         // Load box Pokémon encrypted blobs into the buffer
-        LoadBoxesFromJson(boxTrayArr);
+        var boxTrayArr = _saveData[BoxTrayKey]?.AsArray();
+        if (boxTrayArr is not null)
+            LoadBoxesFromJson(boxTrayArr);
+    }
+
+    /// <summary>
+    /// Absorbs edits from another <see cref="SAVRelumi"/> (e.g. the Trainer Info dialog's clone).
+    /// Raw <see cref="SaveFile.Data"/> is just the original file bytes; live state is the JSON
+    /// tree, so the base byte-copy would silently drop every edit.
+    /// </summary>
+    public override void CopyChangesFrom(SaveFile sav)
+    {
+        if (sav is not SAVRelumi r || ReferenceEquals(this, r))
+            return;
+        foreach (var kvp in r._saveData)
+            _saveData[kvp.Key] = kvp.Value?.DeepClone();
+        ReloadMonBuffer();
+        State.Edited = true;
     }
 
     /// <summary> Reads party Pokémon from JSON into the synthetic buffer. </summary>
@@ -253,6 +279,83 @@ public sealed class SAVRelumi : SaveFile
         // Floor EXP so new mons don't display as level 0 in Relumi (eggs and empty slots untouched).
         if (pk.Species != 0 && !pk.IsEgg && pk.EXP < MinimumEXP)
             pk.EXP = MinimumEXP;
+    }
+
+    // ── Trainer info (backed by playerData in the JSON) ──────────────────
+
+    // PlayerData holds mystatus (name/id/gold/sex/badge), config (msg_lang_id), and playtime.
+    private JsonObject? PlayerData => _saveData["playerData"]?.AsObject();
+    private JsonObject? MyStatus => PlayerData?["mystatus"]?.AsObject();
+    private JsonObject? Config => PlayerData?["config"]?.AsObject();
+    private JsonObject? Playtime => PlayerData?["playtime"]?.AsObject();
+
+    public override string OT
+    {
+        get => MyStatus?["name"]?.GetValue<string>() ?? string.Empty;
+        set { if (MyStatus is { } m) m["name"] = value; }
+    }
+
+    // sex: false = male (0), true = female (1).
+    public override byte Gender
+    {
+        get => MyStatus?["sex"]?.GetValue<bool>() == true ? (byte)1 : (byte)0;
+        set { if (MyStatus is { } m) m["sex"] = value != 0; }
+    }
+
+    // Full 32-bit trainer ID; the dialog edits its low/high halves.
+    private uint TrainerID32
+    {
+        get => MyStatus?["id"]?.GetValue<uint>() ?? 0;
+        set { if (MyStatus is { } m) m["id"] = value; }
+    }
+
+    public override ushort TID16
+    {
+        get => (ushort)(TrainerID32 & 0xFFFF);
+        set => TrainerID32 = (TrainerID32 & 0xFFFF0000) | value;
+    }
+
+    public override ushort SID16
+    {
+        get => (ushort)(TrainerID32 >> 16);
+        set => TrainerID32 = (TrainerID32 & 0xFFFF) | ((uint)value << 16);
+    }
+
+    public override uint Money
+    {
+        get => (uint)(MyStatus?["gold"]?.GetValue<int>() ?? 0);
+        set { if (MyStatus is { } m) m["gold"] = (int)value; }
+    }
+
+    public int Badges
+    {
+        get => MyStatus?["badge"]?.GetValue<int>() ?? 0;
+        set { if (MyStatus is { } m) m["badge"] = value; }
+    }
+
+    // msg_lang_id uses standard LanguageID values (2 = English).
+    public override int Language
+    {
+        get => Config?["msg_lang_id"]?.GetValue<int>() ?? (int)LanguageID.English;
+        set { if (Config is { } c) c["msg_lang_id"] = value; }
+    }
+
+    public override int PlayedHours
+    {
+        get => Playtime?["hour"]?.GetValue<int>() ?? 0;
+        set { if (Playtime is { } p) p["hour"] = value; }
+    }
+
+    public override int PlayedMinutes
+    {
+        get => Playtime?["minute"]?.GetValue<int>() ?? 0;
+        set { if (Playtime is { } p) p["minute"] = value; }
+    }
+
+    public override int PlayedSeconds
+    {
+        get => Playtime?["second"]?.GetValue<int>() ?? 0;
+        set { if (Playtime is { } p) p["second"] = value; }
     }
 
     // ── Checksums (no-op for JSON) ─────────────────────────────────────

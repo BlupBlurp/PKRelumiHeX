@@ -73,6 +73,8 @@ namespace PKHeX.WinForms
             CB_Country = new System.Windows.Forms.ComboBox();
             L_Region = new System.Windows.Forms.Label();
             CB_Region = new System.Windows.Forms.ComboBox();
+            L_Language = new System.Windows.Forms.Label();
+            CB_Language = new System.Windows.Forms.ComboBox();
             B_MaxCoins = new System.Windows.Forms.Button();
             L_Coins = new System.Windows.Forms.Label();
             MT_Coins = new System.Windows.Forms.MaskedTextBox();
@@ -547,6 +549,8 @@ namespace PKHeX.WinForms
             GB_Trainer.Controls.Add(CB_Country);
             GB_Trainer.Controls.Add(L_Region);
             GB_Trainer.Controls.Add(CB_Region);
+            GB_Trainer.Controls.Add(L_Language);
+            GB_Trainer.Controls.Add(CB_Language);
             GB_Trainer.Controls.Add(B_MaxCoins);
             GB_Trainer.Controls.Add(L_Coins);
             GB_Trainer.Controls.Add(MT_Coins);
@@ -613,6 +617,28 @@ namespace PKHeX.WinForms
             CB_Region.Name = "CB_Region";
             CB_Region.Size = new System.Drawing.Size(108, 23);
             CB_Region.TabIndex = 77;
+            // 
+            // L_Language
+            // 
+            L_Language.Location = new System.Drawing.Point(8, 91);
+            L_Language.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            L_Language.Name = "L_Language";
+            L_Language.Size = new System.Drawing.Size(102, 23);
+            L_Language.TabIndex = 80;
+            L_Language.Text = "Language:";
+            L_Language.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            L_Language.Visible = false;
+            // 
+            // CB_Language
+            // 
+            CB_Language.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            CB_Language.FormattingEnabled = true;
+            CB_Language.Location = new System.Drawing.Point(115, 91);
+            CB_Language.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            CB_Language.Name = "CB_Language";
+            CB_Language.Size = new System.Drawing.Size(108, 23);
+            CB_Language.TabIndex = 81;
+            CB_Language.Visible = false;
             // 
             // B_MaxCoins
             // 
@@ -1046,5 +1072,7 @@ namespace PKHeX.WinForms
         private System.Windows.Forms.ComboBox CB_Country;
         private System.Windows.Forms.Label L_Region;
         private System.Windows.Forms.ComboBox CB_Region;
+        private System.Windows.Forms.Label L_Language;
+        private System.Windows.Forms.ComboBox CB_Language;
     }
 }

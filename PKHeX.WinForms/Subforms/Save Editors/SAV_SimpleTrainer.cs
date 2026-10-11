@@ -47,6 +47,18 @@ public partial class SAV_SimpleTrainer : Form
         MT_Seconds.Text = SAV.PlayedSeconds.ToString();
 
         int badgeval = 0;
+        if (SAV is SAVRelumi relumi)
+        {
+            badgeval = relumi.Badges;
+            // Country/Sub Region don't apply to Relumi; show Language in that space instead.
+            L_Country.Visible = L_Region.Visible = CB_Country.Visible = CB_Region.Visible = false;
+            L_Language.Visible = CB_Language.Visible = true;
+            CB_Language.InitializeBinding();
+            CB_Language.DataSource = GameInfo.LanguageDataSource(SAV.Generation, SAV.Context);
+            CB_Language.SelectedValue = SAV.Language;
+            if (CB_Language.SelectedIndex < 0 && CB_Language.Items.Count > 0)
+                CB_Language.SelectedIndex = 0; // stored value not listed; select something valid
+        }
         if (SAV is SAV1 sav1)
         {
             MT_Coins.Text = sav1.Coin.ToString();
@@ -311,6 +323,13 @@ public partial class SAV_SimpleTrainer : Form
             s.BattleSubway.BP = (ushort)Math.Min(Util.ToUInt32(MT_Coins.Text), SAV.MaxCoins);
             s.Country = WinFormsUtil.GetIndex(CB_Country);
             s.Region = WinFormsUtil.GetIndex(CB_Region);
+        }
+
+        if (SAV is SAVRelumi rl)
+        {
+            rl.Badges = badgeval;
+            if (CB_Language.SelectedIndex >= 0)
+                rl.Language = WinFormsUtil.GetIndex(CB_Language);
         }
 
         SAV.SecondsToStart = (uint)DateUtil.GetSecondsFrom2000(CAL_AdventureStartDate.Value, CAL_AdventureStartTime.Value);

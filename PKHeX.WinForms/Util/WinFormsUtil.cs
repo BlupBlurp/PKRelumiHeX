@@ -568,7 +568,10 @@ public static class WinFormsUtil
     /// </remarks>
     public static void SetCultureLanguage(string lang)
     {
-        var ci = new CultureInfo(lang);
+        // Never let an invalid code poison the thread: MaskedTextBox construction throws on a broken culture.
+        CultureInfo ci;
+        try { ci = new CultureInfo(lang); }
+        catch (CultureNotFoundException) { ci = new CultureInfo(GameLanguage.DefaultLanguage); }
         Thread.CurrentThread.CurrentCulture = Thread.CurrentThread.CurrentUICulture = ci;
     }
 

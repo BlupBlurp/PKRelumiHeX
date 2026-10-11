@@ -58,4 +58,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.Globalization.UseNls" Value="true" />
+  </ItemGroup>
+
 </Project>
