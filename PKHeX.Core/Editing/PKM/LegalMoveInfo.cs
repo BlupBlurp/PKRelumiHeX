@@ -33,6 +33,22 @@ public sealed class LegalMoveInfo
     /// <param name="la">Details of analysis, moves to allow</param>
     public bool ReloadMoves(LegalityAnalysis la)
     {
+        // With checks suppressed every move is treated as learnable, so the UI shows no illegal moves.
+        if (LegalityAnalysis.SuppressChecks)
+        {
+            var changed = false;
+            for (int i = 1; i < AllowedMoves.Length; i++)
+            {
+                if (AllowedMoves[i] != Learn)
+                {
+                    AllowedMoves[i] = Learn;
+                    changed = true;
+                }
+            }
+            AllowedMoves[0] = None; // Move ID 0 is always None
+            return changed;
+        }
+
         var rentLearn = ArrayPool<bool>.Shared.Rent(AllowedMoves.Length);
         var spanLearn = rentLearn.AsSpan(0, AllowedMoves.Length);
         var rentEval = ArrayPool<IndicatedSourceType>.Shared.Rent(spanLearn.Length);

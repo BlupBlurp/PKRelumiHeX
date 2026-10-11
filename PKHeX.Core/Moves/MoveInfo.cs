@@ -52,7 +52,8 @@ public static class MoveInfo
     {
         Gen8 => MoveInfo8.DummiedMoves,
         Gen8a => MoveInfo8a.DummiedMoves,
-        Gen8b => MoveInfo8b.DummiedMoves,
+        // When legality checks are suppressed (Relumi save), allow all moves without dummied flagging.
+        Gen8b => LegalityAnalysis.SuppressChecks ? [] : MoveInfo8b.DummiedMoves,
         Gen9 => MoveInfo9.DummiedMoves,
         Gen9a => MoveInfo9a.DummiedMoves,
         _ => [],

@@ -176,6 +176,10 @@ public static class EntityConverter
         BK4 bk4 => bk4.ConvertToPK4(),
         RK4 rk4 => rk4.ConvertToPK4(),
 
+        // Relumi subclass conversions (PB8R shares PB8's data layout, differing only in limits/personal table)
+        PB8R pb8r when destType == typeof(PB8) => pb8r.ConvertToPB8(),
+        PB8 pb8 when destType == typeof(PB8R) => pb8.ConvertToPB8R(),
+
         _ => GetFinalResult(pk, destType, ref result),
     };
 
@@ -190,6 +194,19 @@ public static class EntityConverter
 
     private static PKM? GetFinalResult(PKM pk, Type destType, ref EntityConverterResult result)
     {
+        // PB8R is a PB8 subclass with wider limits — go through HOME as PB8, then re-wrap
+        if (destType == typeof(PB8R))
+        {
+            var pkh = HOME.GetEntity(pk);
+            var pb8 = pkh.ConvertToPKM(HomeGameDataFormat.PB8);
+            if (pb8 is null)
+            {
+                result = IncompatibleSpecies;
+                return null;
+            }
+            return ((PB8)pb8).ConvertToPB8R();
+        }
+
         // Every format can eventually feed into HOME. Don't bother checking current type.
         var type = PKH.GetType(destType);
         if (type is not HomeGameDataFormat.None)

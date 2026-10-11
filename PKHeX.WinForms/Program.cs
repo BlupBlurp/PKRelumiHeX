@@ -46,6 +46,9 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        // Relumi is a custom save format — baked-in legality checks don't apply.
+        LegalityAnalysis.SuppressChecks = true;
+
         // Load settings first
         var settings = Settings;
         settings.LocalResources.SetLocalPath(WorkingDirectory);

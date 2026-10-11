@@ -488,11 +488,29 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
         }
 
         var str = GameInfo.Strings;
-        var forms = FormConverter.GetFormList(species, str.types, str.forms, gendersymbols, Entity.Context);
+        var forms = RequestSaveFile.Personal is PersonalTableRelumi
+            ? GetRelumiFormList(species, str)
+            : FormConverter.GetFormList(species, str.types, str.forms, gendersymbols, Entity.Context);
         if (forms.Length <= 1) // no choices
             CB_Form.Enabled = CB_Form.Visible = Label_Form.Visible = false;
         else
             CB_Form.DataSource = forms;
+    }
+
+    /// <summary> Builds the form name list for Relumi using the game's own form names. </summary>
+    private static string[] GetRelumiFormList(ushort species, GameStrings str)
+    {
+        var names = RelumiFormNames.GetFormNames(species);
+        if (names is null)
+            return [string.Empty];
+
+        // Base form has no suffix in-game; show the species name so every entry is a full name.
+        if (names[0].Length == 0)
+        {
+            names = (string[])names.Clone();
+            names[0] = str.specieslist[species];
+        }
+        return names;
     }
 
     private void SetAbilityList()

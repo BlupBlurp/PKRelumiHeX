@@ -12,6 +12,11 @@ namespace PKHeX.Core;
 /// </summary>
 public sealed class LegalityAnalysis
 {
+    /// <summary>
+    /// When set to <see langword="true"/>, all legality checks are skipped and all Pokémon are reported as valid.
+    /// </summary>
+    public static bool SuppressChecks { get; set; }
+
     /// <summary> The entity we are checking. </summary>
     internal readonly PKM Entity;
 
@@ -114,6 +119,20 @@ public sealed class LegalityAnalysis
         SlotOrigin = source;
 
         Info = new LegalInfo(pk, Parse);
+
+        if (SuppressChecks)
+        {
+            Valid = true;
+            Parsed = true;
+            // Mark all move/relearn slots as valid so the UI doesn't flag them red
+            for (int i = 0; i < 4; i++)
+            {
+                Info.Moves[i] = MoveResult.Empty;
+                Info.Relearn[i] = MoveResult.Empty;
+            }
+            return;
+        }
+
 #if SUPPRESS
         try
 #endif

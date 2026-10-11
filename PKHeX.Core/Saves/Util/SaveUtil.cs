@@ -108,6 +108,7 @@ public static class SaveUtil
     public static readonly List<ISaveReader> CustomSaveReaders =
     [
         new ZipReader(),
+        new PbrelumiReader(),
     ];
 
     /// <summary>

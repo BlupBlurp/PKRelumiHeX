@@ -31,6 +31,11 @@ public static class PersonalTable
     public static readonly PersonalTable8BDSP BDSP = new(GetTable("bdsp"));
 
     /// <summary>
+    /// Personal Table used for Relumi saves (covers all species up to gen 9 in BDSP format).
+    /// </summary>
+    public static readonly PersonalTableRelumi Relumi = new();
+
+    /// <summary>
     /// Personal Table used in <see cref="EntityContext.Gen8"/>.
     /// </summary>
     public static readonly PersonalTable8SWSH SWSH = new(GetTable("swsh"));

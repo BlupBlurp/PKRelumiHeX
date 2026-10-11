@@ -1,0 +1,154 @@
+using System;
+using System.IO;
+using Xunit;
+
+namespace PKHeX.Core.Tests;
+
+public class SAVRelumiTests
+{
+    // SaveData.bin lives at repo root.
+    // GetRepoPath returns Tests/PKHeX.Core.Tests when cwd is there, so go up two levels.
+    private static string SavePath =>
+        Path.GetFullPath(Path.Combine(TestUtil.GetRepoPath(), "..", "..", "SaveData.bin"));
+
+    [Fact]
+    public void LoadAndRoundTrip()
+    {
+        Assert.True(File.Exists(SavePath), $"Save file not found: {Path.GetFullPath(SavePath)}");
+        var originalBytes = File.ReadAllBytes(SavePath);
+
+        // Load
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(originalBytes, out var sav), "Failed to load save");
+        var relumi = (SAVRelumi)sav;
+        Assert.True(relumi.PartyCount > 0, "Should have party Pokémon");
+        Assert.Equal(80, relumi.BoxCount);
+
+        // Check we can read some data
+        var pk0 = relumi.GetPartySlotAtIndex(0);
+        Assert.NotEqual(0, pk0.Species);
+
+        // Save without edits
+        var result = relumi.Write();
+        var resultBytes = result.ToArray();
+
+        // Compare byte-for-byte
+        Assert.Equal(originalBytes.Length, resultBytes.Length);
+        Assert.True(originalBytes.AsSpan().SequenceEqual(resultBytes),
+            "Round-trip should produce byte-identical output when no edits made");
+    }
+
+    [Fact]
+    public void PersonalTableHasRelumiAbilities()
+    {
+        // Croconaw (159) is changed in Relumi: Strong Jaw / Torrent / Sheer Force.
+        var pi = PersonalTable.Relumi.GetFormEntry(159, 0);
+        Assert.Equal(173, pi.GetAbilityAtIndex(0)); // Strong Jaw
+        Assert.Equal(67, pi.GetAbilityAtIndex(1));  // Torrent
+        Assert.Equal(125, pi.GetAbilityAtIndex(2)); // Sheer Force
+    }
+
+    [Fact]
+    public void PersonalTableGen5EntriesUseSVData()
+    {
+        // Species 494-559 must be synthesized from SV (not BDSP form entries).
+        // Victini (494) yields 3 HP EVs; Snivy (495) yields 1 Speed EV.
+        var victini = PersonalTable.Relumi.GetFormEntry(494, 0);
+        Assert.Equal(3, victini.EV_HP);
+        Assert.Equal(0, victini.EV_ATK);
+
+        var snivy = PersonalTable.Relumi.GetFormEntry(495, 0);
+        Assert.Equal(1, snivy.EV_SPE);
+    }
+
+    [Fact]
+    public void RelumiFormNamesHasCustomMewtwoForms()
+    {
+        // Mewtwo (150) has 7 forms in Relumi, including the armored/shadow customs.
+        var names = RelumiFormNames.GetFormNames(150);
+        Assert.NotNull(names);
+        Assert.Equal(7, names.Length);
+        Assert.Equal("Mega X Mewtwo", names[1]);
+        Assert.Equal("Mega Y Mewtwo", names[2]);
+        Assert.Equal("Mk II Armored Mewtwo", names[3]);
+        Assert.Equal("Mk I Armored Mewtwo", names[4]);
+        Assert.Equal("Shadow Mewtwo", names[5]);
+        Assert.Equal("Shadow Mega Mewtwo", names[6]);
+    }
+
+    [Fact]
+    public void RelumiFormNamesMatchesPersonalFormCounts()
+    {
+        // Every form list must line up with the personal table's FormCount.
+        for (ushort species = 1; species <= PersonalTable.Relumi.MaxSpeciesID; species++)
+        {
+            var pi = PersonalTable.Relumi[species];
+            var names = RelumiFormNames.GetFormNames(species);
+            if (pi.FormCount <= 1)
+            {
+                Assert.Null(names);
+            }
+            else
+            {
+                Assert.NotNull(names);
+                Assert.Equal(pi.FormCount, names.Length);
+            }
+        }
+    }
+
+    [Fact]
+    public void BlankPB8RLevel1EncryptsToCorrectBytes()
+    {
+        // A level-1 PB8R with EXP=0 must produce Stat_Level=1 in the encrypted blob.
+        var pk = new PB8R
+        {
+            Species = 1,   // Bulbasaur
+            Stat_Level = 1, // as set by the level textbox (LoadSave.cs)
+        };
+        pk.ResetPartyStats();
+
+        // Write encrypted to a buffer, matching what WriteSlotParty does internally.
+        var buffer = new byte[pk.SIZE_PARTY];
+        pk.WriteEncryptedDataParty(buffer);
+
+        // Decrypt and verify.
+        PokeCrypto.Decrypt8(buffer);
+        Assert.Equal(1, buffer[0x148]); // Stat_Level at G8PKM offset
+        Assert.Equal(0u, BitConverter.ToUInt32(buffer.AsSpan(0x28))); // EXP at PB8 offset
+    }
+
+    [Fact]
+    public void EditAndReSave()
+    {
+        Assert.True(File.Exists(SavePath));
+        var originalBytes = File.ReadAllBytes(SavePath);
+
+        // Load
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(originalBytes, out var sav));
+        var relumi = (SAVRelumi)sav;
+
+        // Read original move
+        var pk0 = relumi.GetPartySlotAtIndex(0);
+        var originalMove = pk0.Move1;
+        var newMove = originalMove == (ushort)1 ? (ushort)33 : (ushort)1;
+
+        // Edit and save
+        pk0.Move1 = newMove;
+        pk0.RefreshChecksum();
+        relumi.SetPartySlotAtIndex(pk0, 0);
+
+        var result = relumi.Write();
+        var resultBytes = result.ToArray();
+
+        // Reload and verify the edit persisted
+        Assert.True(reader.TryRead(resultBytes, out var sav2));
+        var pk0b = sav2.GetPartySlotAtIndex(0);
+        Assert.Equal(newMove, pk0b.Move1);
+
+        // The original move bytes should differ
+        Assert.NotEqual(originalBytes.Length, resultBytes.Length); // JSON might change length slightly with diff values
+        var pk0Orig = ((SAVRelumi)sav2).GetPartySlotAtIndex(0); // re-read in any case
+        Assert.True(pk0b.Move1 == newMove);
+    }
+}

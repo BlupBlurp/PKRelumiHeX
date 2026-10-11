@@ -3,7 +3,7 @@ using System;
 namespace PKHeX.Core;
 
 /// <summary> Generation 8 <see cref="PKM"/> format. </summary>
-public sealed class PB8 : G8PKM
+public class PB8 : G8PKM
 {
     public override ReadOnlySpan<ushort> ExtraBytes =>
     [
@@ -37,6 +37,9 @@ public sealed class PB8 : G8PKM
 
     public PB8(Memory<byte> data) : base(data) { }
     public override PB8 Clone() => new(Data.ToArray());
+
+    /// <summary> Converts to <see cref="PB8R"/> by re-wrapping the same data. </summary>
+    public PB8R ConvertToPB8R() => new(Data.ToArray());
 
     public bool IsDprIllegal
     {
