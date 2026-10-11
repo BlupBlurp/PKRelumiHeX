@@ -62,8 +62,12 @@ namespace PKHeX.WinForms.Controls
             CB_HeldItem = new System.Windows.Forms.ComboBox();
             Label_HeldItem = new System.Windows.Forms.Label();
             FA_Form = new FormArgumentEditor();
+            FLP_FormArgRight = new System.Windows.Forms.FlowLayoutPanel();
+            NUD_FormArgument = new System.Windows.Forms.NumericUpDown();
             L_FormArgument = new System.Windows.Forms.Label();
+            FLP_FormRight = new System.Windows.Forms.FlowLayoutPanel();
             CB_Form = new System.Windows.Forms.ComboBox();
+            NUD_Form = new System.Windows.Forms.NumericUpDown();
             Label_Form = new System.Windows.Forms.Label();
             CB_StatAlignment = new System.Windows.Forms.ComboBox();
             L_StatAlignment = new System.Windows.Forms.Label();
@@ -257,6 +261,10 @@ namespace PKHeX.WinForms.Controls
             FLP_PKRSRight.SuspendLayout();
             FLP_EggPKRSRight.SuspendLayout();
             FLP_AbilityRight.SuspendLayout();
+            FLP_FormRight.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)NUD_Form).BeginInit();
+            FLP_FormArgRight.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)NUD_FormArgument).BeginInit();
             FLP_Purification.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)NUD_Purification).BeginInit();
             FLP_EXPLevelRight.SuspendLayout();
@@ -387,9 +395,9 @@ namespace PKHeX.WinForms.Controls
             TLP_Main.Controls.Add(Label_Ability, 0, 10);
             TLP_Main.Controls.Add(CB_HeldItem, 1, 9);
             TLP_Main.Controls.Add(Label_HeldItem, 0, 9);
-            TLP_Main.Controls.Add(FA_Form, 1, 8);
+            TLP_Main.Controls.Add(FLP_FormArgRight, 1, 8);
             TLP_Main.Controls.Add(L_FormArgument, 0, 8);
-            TLP_Main.Controls.Add(CB_Form, 1, 7);
+            TLP_Main.Controls.Add(FLP_FormRight, 1, 7);
             TLP_Main.Controls.Add(Label_Form, 0, 7);
             TLP_Main.Controls.Add(CB_StatAlignment, 1, 6);
             TLP_Main.Controls.Add(L_StatAlignment, 0, 6);
@@ -772,17 +780,40 @@ namespace PKHeX.WinForms.Controls
             Label_HeldItem.Text = "Held Item:";
             Label_HeldItem.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // FLP_FormArgRight
+            // 
+            FLP_FormArgRight.AutoSize = true;
+            FLP_FormArgRight.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            FLP_FormArgRight.Controls.Add(FA_Form);
+            FLP_FormArgRight.Controls.Add(NUD_FormArgument);
+            FLP_FormArgRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            FLP_FormArgRight.Location = new System.Drawing.Point(120, 210);
+            FLP_FormArgRight.Margin = new System.Windows.Forms.Padding(0);
+            FLP_FormArgRight.Name = "FLP_FormArgRight";
+            FLP_FormArgRight.Size = new System.Drawing.Size(211, 25);
+            FLP_FormArgRight.TabIndex = 15;
+            // 
+            // NUD_FormArgument
+            // 
+            NUD_FormArgument.Location = new System.Drawing.Point(0, 0);
+            NUD_FormArgument.Margin = new System.Windows.Forms.Padding(0);
+            NUD_FormArgument.Maximum = new decimal(new int[] { -1, 0, 0, 0 });
+            NUD_FormArgument.Name = "NUD_FormArgument";
+            NUD_FormArgument.Size = new System.Drawing.Size(72, 25);
+            NUD_FormArgument.TabIndex = 1;
+            NUD_FormArgument.Visible = false;
+            // 
             // FA_Form
             // 
             FA_Form.AccessibleDescription = "Form Argument Info";
             FA_Form.AccessibleName = "Form Argument Info";
             FA_Form.AutoSize = true;
             FA_Form.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            FA_Form.Location = new System.Drawing.Point(120, 210);
+            FA_Form.Location = new System.Drawing.Point(0, 0);
             FA_Form.Margin = new System.Windows.Forms.Padding(0);
             FA_Form.Name = "FA_Form";
             FA_Form.Size = new System.Drawing.Size(0, 0);
-            FA_Form.TabIndex = 15;
+            FA_Form.TabIndex = 0;
             FA_Form.ValueChanged += UpdateFormArgument;
             // 
             // L_FormArgument
@@ -797,6 +828,30 @@ namespace PKHeX.WinForms.Controls
             L_FormArgument.Text = "Form Argument:";
             L_FormArgument.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // FLP_FormRight
+            // 
+            FLP_FormRight.AutoSize = true;
+            FLP_FormRight.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            FLP_FormRight.Controls.Add(CB_Form);
+            FLP_FormRight.Controls.Add(NUD_Form);
+            FLP_FormRight.Dock = System.Windows.Forms.DockStyle.Fill;
+            FLP_FormRight.Location = new System.Drawing.Point(120, 184);
+            FLP_FormRight.Margin = new System.Windows.Forms.Padding(0);
+            FLP_FormRight.Name = "FLP_FormRight";
+            FLP_FormRight.Size = new System.Drawing.Size(211, 25);
+            FLP_FormRight.TabIndex = 13;
+            // 
+            // NUD_Form
+            // 
+            NUD_Form.Location = new System.Drawing.Point(144, 0);
+            NUD_Form.Margin = new System.Windows.Forms.Padding(0);
+            NUD_Form.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
+            NUD_Form.Name = "NUD_Form";
+            NUD_Form.Size = new System.Drawing.Size(48, 25);
+            NUD_Form.TabIndex = 1;
+            NUD_Form.Visible = false;
+            NUD_Form.ValueChanged += UpdateFormNumber;
+            // 
             // CB_Form
             // 
             CB_Form.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -804,11 +859,11 @@ namespace PKHeX.WinForms.Controls
             CB_Form.Enabled = false;
             CB_Form.FormattingEnabled = true;
             CB_Form.Items.AddRange(new object[] { "" });
-            CB_Form.Location = new System.Drawing.Point(120, 184);
+            CB_Form.Location = new System.Drawing.Point(0, 0);
             CB_Form.Margin = new System.Windows.Forms.Padding(0, 0, 0, 1);
             CB_Form.Name = "CB_Form";
             CB_Form.Size = new System.Drawing.Size(144, 25);
-            CB_Form.TabIndex = 13;
+            CB_Form.TabIndex = 0;
             CB_Form.SelectedIndexChanged += UpdateForm;
             // 
             // Label_Form
@@ -3227,6 +3282,12 @@ namespace PKHeX.WinForms.Controls
             FLP_EggPKRSRight.PerformLayout();
             FLP_AbilityRight.ResumeLayout(false);
             FLP_AbilityRight.PerformLayout();
+            FLP_FormRight.ResumeLayout(false);
+            FLP_FormRight.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)NUD_Form).EndInit();
+            FLP_FormArgRight.ResumeLayout(false);
+            FLP_FormArgRight.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)NUD_FormArgument).EndInit();
             FLP_Purification.ResumeLayout(false);
             FLP_Purification.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)NUD_Purification).EndInit();
@@ -3542,6 +3603,10 @@ namespace PKHeX.WinForms.Controls
         private System.Windows.Forms.NumericUpDown NUD_PokeStarFame;
         private System.Windows.Forms.Button B_PlusRecord;
         private FormArgumentEditor FA_Form;
+        private System.Windows.Forms.FlowLayoutPanel FLP_FormArgRight;
+        private System.Windows.Forms.NumericUpDown NUD_FormArgument;
+        private System.Windows.Forms.FlowLayoutPanel FLP_FormRight;
+        private System.Windows.Forms.NumericUpDown NUD_Form;
         private System.Windows.Forms.ComboBox CB_Form;
         private System.Windows.Forms.TableLayoutPanel TLP_Main;
         private System.Windows.Forms.Label CHK_Nicknamed;

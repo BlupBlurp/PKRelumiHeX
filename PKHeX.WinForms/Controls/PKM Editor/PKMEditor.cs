@@ -160,6 +160,9 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
         set => field = Stats.HaX = value;
     }
 
+    // Relumi sandbox lets HaX users type any form/form-arg number, even without a pml entry.
+    private bool IsRelumiHaX => HaX && RequestSaveFile is SAVRelumi;
+
     private byte[] LastData { get; set; } = [];
     public void NotifyWasExported(PKM pk) => LastData = pk.Data.ToArray();
 
@@ -518,7 +521,8 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
         if (Entity.Format < 3) // no abilities
             return;
 
-        if (Entity.Format > 3 && FieldsLoaded) // has forms
+        // HaX form box owns the form value when visible, so don't clobber it from the dropdown.
+        if (Entity.Format > 3 && FieldsLoaded && !NUD_Form.Visible) // has forms
             Entity.Form = (byte)CB_Form.SelectedIndex; // update pk field for form specific abilities
 
         int ability = CB_Ability.SelectedIndex;
@@ -1115,9 +1119,29 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
             UC_Gender.Gender = Entity.GetSaneGender();
         }
 
+        // Mirror the dropdown into the HaX number box so both stay in sync.
+        if (NUD_Form.Visible && CB_Form.SelectedIndex >= 0 && NUD_Form.Value != CB_Form.SelectedIndex)
+        {
+            ChangingFields = true;
+            NUD_Form.Value = CB_Form.SelectedIndex;
+            ChangingFields = false;
+        }
+
         RefreshFormArguments();
         if (ChangingFields)
             return;
+        UpdateSprite();
+    }
+
+    // Applies a hand-typed HaX form number directly, bypassing the known-form dropdown.
+    private void UpdateFormNumber(object sender, EventArgs e)
+    {
+        if (!FieldsLoaded || ChangingFields || !NUD_Form.Visible)
+            return;
+        Entity.Form = (byte)NUD_Form.Value;
+        UpdateStats();
+        SetAbilityList();
+        RefreshFormArguments();
         UpdateSprite();
     }
 
@@ -1132,6 +1156,9 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
         if (FieldsLoaded)
             FA_Form.SaveArgument(f);
         L_FormArgument.Visible = FA_Form.LoadArgument(f, Entity.Species, Entity.Form, Entity.Context);
+        // Relumi HaX always shows the form-arg number box, even with no preset editor.
+        if (IsRelumiHaX)
+            L_FormArgument.Visible = true;
     }
 
     private void UpdatePKRSstrain(object sender, EventArgs e)
@@ -2138,6 +2165,10 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
 
         // HaX override, needs to be after DEV_Ability enabled assignment.
         TB_AbilityNumber.Visible = format >= 6 && DEV_Ability.Enabled;
+
+        // Relumi HaX overrides for arbitrary form/form-arg numbers.
+        NUD_Form.Visible = NUD_Form.TabStop = IsRelumiHaX && format >= 3;
+        NUD_FormArgument.Visible = NUD_FormArgument.TabStop = IsRelumiHaX && Entity is IFormArgument;
 
         // Met Tab
         FLP_MetDate.Visible = format >= 4;

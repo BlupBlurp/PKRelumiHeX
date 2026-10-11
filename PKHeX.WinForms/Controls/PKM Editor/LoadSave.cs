@@ -207,6 +207,16 @@ public partial class PKMEditor
         CB_HeldItem.SelectedValue = pk.HeldItem;
         LoadClamp(CB_Form, pk.Form);
         L_FormArgument.Visible = pk is IFormArgument f && FA_Form.LoadArgument(f, pk.Species, pk.Form, pk.Context);
+        // Relumi HaX shows raw number boxes for any form/form-arg, even without a pml entry.
+        if (NUD_Form.Visible)
+            NUD_Form.Value = pk.Form;
+        if (pk is IFormArgument fa)
+        {
+            if (NUD_FormArgument.Visible)
+                NUD_FormArgument.Value = Math.Min(fa.FormArgument, (uint)NUD_FormArgument.Maximum);
+            if (IsRelumiHaX)
+                L_FormArgument.Visible = true;
+        }
 
         TB_Friendship.Text = pk.OriginalTrainerFriendship.ToString();
 
@@ -219,9 +229,16 @@ public partial class PKMEditor
         SavePokerus(pk);
         pk.IsEgg = CHK_IsEgg.Checked;
         pk.HeldItem = WinFormsUtil.GetIndex(CB_HeldItem);
-        pk.Form = (byte)(CB_Form.Enabled ? CB_Form.SelectedIndex & 0x1F : 0);
+        // Relumi HaX stores the typed form byte as-is instead of the dropdown index.
+        if (NUD_Form.Visible)
+            pk.Form = (byte)NUD_Form.Value;
+        else
+            pk.Form = (byte)(CB_Form.Enabled ? CB_Form.SelectedIndex & 0x1F : 0);
         if (Entity is IFormArgument f)
             FA_Form.SaveArgument(f);
+        // Relumi HaX stores the typed form-arg as-is, winning over the preset editor.
+        if (NUD_FormArgument.Visible && pk is IFormArgument fa)
+            fa.FormArgument = (uint)NUD_FormArgument.Value;
 
         var friendship = (byte)Util.ToInt32(TB_Friendship.Text);
         pk.OriginalTrainerFriendship = friendship;
