@@ -240,11 +240,19 @@ public sealed class SAVRelumi : SaveFile
 
     // Relumi suppresses legality (HaX), so the editor's SavePartyStats skips the
     // Stat_Level ← CurrentLevel sync. Ensure the party-stats level matches.
+    // Relumi shows level 0 for 0 EXP (its level-1 threshold is above 0, unlike standard
+    // tables where 0 EXP is level 1). Floor fresh mons so new ones display level 1 in-game.
+    // Assumption: the threshold is 1 EXP — fits all observed save data (lowest nonzero EXP
+    // is 125); raise this if the game reveals a higher level-1 requirement.
+    internal const uint MinimumEXP = 1;
     protected override void SetPartyValues(PKM pk, bool isParty)
     {
         base.SetPartyValues(pk, isParty);
         if (isParty)
             pk.Stat_Level = pk.CurrentLevel;
+        // Floor EXP so new mons don't display as level 0 in Relumi (eggs and empty slots untouched).
+        if (pk.Species != 0 && !pk.IsEgg && pk.EXP < MinimumEXP)
+            pk.EXP = MinimumEXP;
     }
 
     // ── Checksums (no-op for JSON) ─────────────────────────────────────

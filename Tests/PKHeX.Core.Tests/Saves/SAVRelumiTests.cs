@@ -118,6 +118,32 @@ public class SAVRelumiTests
     }
 
     [Fact]
+    public void NewBoxMonGetsLevelOneExpFloor()
+    {
+        // Relumi displays level 0 for 0 EXP; saving must floor fresh mons so they show level 1.
+        Assert.True(File.Exists(SavePath));
+        var originalBytes = File.ReadAllBytes(SavePath);
+        var reader = new PbrelumiReader();
+        Assert.True(reader.TryRead(originalBytes, out var sav));
+        var relumi = (SAVRelumi)sav;
+
+        var pk = (PB8R)relumi.BlankPKM;
+        pk.Species = 216; // Teddiursa
+        pk.Stat_Level = 1;
+        pk.EXP = 0;
+        pk.ResetPartyStats();
+        pk.RefreshChecksum();
+        relumi.SetBoxSlotAtIndex(pk, 0, 17); // empty slot in the sample save
+
+        var resultBytes = relumi.Write().ToArray();
+        Assert.True(reader.TryRead(resultBytes, out var sav2));
+        var back = ((SAVRelumi)sav2).GetBoxSlotAtIndex(0, 17);
+        Assert.Equal((ushort)216, back.Species);
+        Assert.Equal(1u, back.EXP); // floored, still level 1 in every standard curve
+        Assert.Equal(1, back.CurrentLevel);
+    }
+
+    [Fact]
     public void EditAndReSave()
     {
         Assert.True(File.Exists(SavePath));
@@ -146,9 +172,8 @@ public class SAVRelumiTests
         var pk0b = sav2.GetPartySlotAtIndex(0);
         Assert.Equal(newMove, pk0b.Move1);
 
-        // The original move bytes should differ
-        Assert.NotEqual(originalBytes.Length, resultBytes.Length); // JSON might change length slightly with diff values
-        var pk0Orig = ((SAVRelumi)sav2).GetPartySlotAtIndex(0); // re-read in any case
+        // The edited file must differ in content (length can coincide when both values use the same digit count).
+        Assert.False(originalBytes.AsSpan().SequenceEqual(resultBytes), "Edited save should differ from original");
         Assert.True(pk0b.Move1 == newMove);
     }
 }
